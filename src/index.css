@@ -137,12 +137,43 @@ select {
    CONNECTION BAR
 ══════════════════════════════════════════════════════════════ */
 .connection-bar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(90deg, #0c1929 0%, #0f1f38 40%, #120d24 100%);
+  border-bottom: 1px solid #1e3a5f;
   position: sticky;
   top: 0;
   z-index: 100;
-  backdrop-filter: blur(8px);
+  overflow: hidden;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Animated speed lines in the background */
+.bar-track-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.track-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(14, 165, 233, 0.18) 40%,
+    rgba(168, 85, 247, 0.12) 60%,
+    transparent
+  );
+  left: calc(8% + var(--i) * 16%);
+  animation: line-drift 4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * 0.5s);
+}
+
+@keyframes line-drift {
+  from { opacity: 0.3; transform: scaleY(0.7); }
+  to   { opacity: 1;   transform: scaleY(1); }
 }
 
 .serial-warning {
@@ -152,58 +183,93 @@ select {
   padding: 7px 20px;
   font-size: 12px;
   font-weight: 500;
+  position: relative;
+  z-index: 1;
 }
 
 .connection-bar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
-  gap: 12px;
+  padding: 10px 20px;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
 }
 
-/* Brand */
+/* ── Brand ── */
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex-shrink: 0;
 }
 
-.brand-logo {
-  background: linear-gradient(135deg, var(--blue), var(--purple));
-  color: #fff;
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 0.05em;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+/* F1 badge */
+.brand-badge {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: baseline;
+  gap: 1px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #a855f7 100%);
+  border-radius: 7px;
+  padding: 4px 9px 5px;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.35), inset 0 1px 0 rgba(255,255,255,0.15);
   flex-shrink: 0;
 }
 
+.badge-f {
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.badge-1 {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+
+/* F1 car SVG */
+.f1-car-svg {
+  height: 38px;
+  width: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px rgba(14, 165, 233, 0.45));
+  animation: car-float 3s ease-in-out infinite;
+}
+
+@keyframes car-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-2px); }
+}
+
+/* Brand text */
 .brand-text {
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 .brand-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text);
+  color: #f1f5f9;
   line-height: 1.2;
+  letter-spacing: 0.01em;
 }
 
 .brand-subtitle {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-/* Status row */
+/* ── Status + controls ── */
 .connection-status {
   display: flex;
   align-items: center;
@@ -211,18 +277,59 @@ select {
   flex-wrap: wrap;
 }
 
+/* Status pill */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.status-pill--on {
+  background: rgba(34, 197, 94, 0.10);
+  border-color: rgba(34, 197, 94, 0.30);
+}
+
+.status-pill--off {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
 .status-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
   transition: background 0.3s, box-shadow 0.3s;
 }
 
-.status-dot.connected {
+.status-pill--on  .status-dot {
   background: var(--green);
   box-shadow: 0 0 8px var(--green);
+  animation: pulse-green 2s ease-in-out infinite;
 }
+
+.status-pill--off .status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 6px var(--green); }
+  50%       { box-shadow: 0 0 14px var(--green), 0 0 4px #fff; }
+}
+
+.status-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.status-pill--on  .status-label { color: #86efac; }
+.status-pill--off .status-label { color: #fca5a5; }
 
 .status-dot.disconnected {
   background: var(--red);
