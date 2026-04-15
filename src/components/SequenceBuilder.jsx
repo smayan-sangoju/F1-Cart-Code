@@ -20,8 +20,32 @@ function dirMod(dir) {
   return 'stp'
 }
 
+/** Timeline bar showing each step's duration as a proportional colored segment */
+function SequenceTimeline({ steps, totalTime }) {
+  if (steps.length === 0 || totalTime === 0) return null
+  return (
+    <div className="seq-timeline">
+      <div className="timeline-label">Timeline</div>
+      <div className="timeline-track">
+        {steps.map(step => {
+          const pct = (step.duration / totalTime) * 100
+          const mod = dirMod(step.direction)
+          return (
+            <div
+              key={step.id}
+              className={`timeline-seg seg-${mod}`}
+              style={{ width: `${pct}%` }}
+              title={`${step.direction}${step.speed ? ' · ' + step.speed : ''} · ${step.duration}s`}
+            />
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function SequenceBuilder({ serial }) {
-  const { connected, sendCommand, seqRunning, setSeqRunning } = serial
+  const { connected, sendCommand, seqRunning, setSeqRunning, seqWaiting } = serial
 
   const [steps,       setSteps]       = useState([])
   const [newDir,      setNewDir]      = useState('Forward')
@@ -52,7 +76,6 @@ export default function SequenceBuilder({ serial }) {
     if (steps.length === 0) return
     const payload = steps.map(encodeStep).join('|')
     await sendCommand(`LOAD ${payload}`)
-    // Give the Arduino a moment to parse before issuing SEQ
     setTimeout(async () => {
       await sendCommand('SEQ')
       setSeqRunning(true)
@@ -127,6 +150,7 @@ export default function SequenceBuilder({ serial }) {
             const mod = dirMod(step.direction)
             return (
               <div key={step.id} className={`step-item step-${mod}`}>
+                <span className="step-drag-handle" aria-hidden="true">⋮⋮</span>
                 <span className={`step-badge badge-${mod}`}>{i + 1}</span>
                 <span className="step-dir">{step.direction}</span>
                 {step.speed && (
@@ -148,37 +172,57 @@ export default function SequenceBuilder({ serial }) {
         )}
       </div>
 
+      {/* Timeline */}
+      <SequenceTimeline steps={steps} totalTime={totalTime} />
+
       {/* Footer */}
       <div className="sequence-footer">
-        <div className="sequence-stats">
-          Total:&nbsp;<strong>{totalTime.toFixed(1)}s</strong>
-        </div>
-        <div className="sequence-actions">
-          <button
-            className="btn-clear"
-            onClick={clearAll}
-            disabled={steps.length === 0}
-          >
-            Clear All
-          </button>
+        <div className="seq-footer-row">
+          <div className="sequence-stats">
+            Total:&nbsp;<strong>{totalTime.toFixed(1)}s</strong>
+          </div>
+          <div className="sequence-actions">
+            <button
+              className="btn-clear"
+              onClick={clearAll}
+              disabled={steps.length === 0 || seqRunning}
+            >
+              Clear All
+            </button>
 
-          {seqRunning ? (
-            <button
-              className="btn-stop-seq"
-              onClick={stopSequence}
-              disabled={!connected}
-            >
-              ⏹&nbsp; Stop
-            </button>
-          ) : (
-            <button
-              className="btn-run-seq"
-              onClick={runSequence}
-              disabled={!connected || steps.length === 0}
-            >
-              ▶&nbsp; Run Sequence
-            </button>
-          )}
+            {seqRunning ? (
+              seqWaiting ? (
+                /* Armed — waiting for physical button press */
+                <div className="seq-waiting-state">
+                  <span className="seq-waiting-text">⏳ Press cart button…</span>
+                  <button
+                    className="btn-cancel-seq"
+                    onClick={stopSequence}
+                    disabled={!connected}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                /* Sequence actively running */
+                <button
+                  className="btn-stop-seq"
+                  onClick={stopSequence}
+                  disabled={!connected}
+                >
+                  ⏹&nbsp; Stop Sequence
+                </button>
+              )
+            ) : (
+              <button
+                className="btn-arm-seq"
+                onClick={runSequence}
+                disabled={!connected || steps.length === 0}
+              >
+                ⚑&nbsp; Arm Sequence
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

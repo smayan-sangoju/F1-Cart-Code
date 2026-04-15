@@ -18,6 +18,13 @@ const int BUTTON_PIN = 4;   // Physical start button — wire between pin 2 and 
 // TUNING: adjust these ±5 at a time on the Vernier track.
 // Measure with a stopwatch over 1 m to verify.
 
+const int BATT_PIN = A0;
+const float VDIVIDER_RATIO = 2.0;
+const float BATT_FULL      = 8.4;
+const float BATT_EMPTY     = 6.0;
+unsigned long lastBattReport = 0;
+const unsigned long BATT_INTERVAL_MS = 3000;
+
 const int NEUTRAL   = 90;
 
 const int FWD_SLOW  = 105;   // ≈ 20 cm/s  — well below old working range
@@ -58,6 +65,19 @@ bool lastBtnState      = HIGH;
 unsigned long lastDebounceTime = 0;
 const unsigned long DEBOUNCE_MS = 50;
 
+
+void reportBattery() {
+  int raw = analogRead(BATT_PIN);
+  float pinVoltage = (raw / 1023.0) * 5.0;
+  float battVoltage = pinVoltage * VDIVIDER_RATIO;
+  if (battVoltage > BATT_FULL) battVoltage = BATT_FULL;
+  if (battVoltage < BATT_EMPTY) battVoltage = BATT_EMPTY;
+  int percent = (int)(((battVoltage - BATT_EMPTY) / (BATT_FULL - BATT_EMPTY)) * 100.0);
+  Serial.print("BAT ");
+  Serial.print(percent);
+  Serial.print(" ");
+  Serial.println(battVoltage, 1);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // Reverse helper — the core fix
@@ -154,6 +174,12 @@ void loop() {
     lastBtnState = reading;
   }
   lastBtnReading = reading;
+
+  // ── Battery reporting ─────────────────────────────────────
+  if (millis() - lastBattReport >= BATT_INTERVAL_MS) {
+    reportBattery();
+    lastBattReport = millis();
+  }
 
   // ── Sequence step machine ─────────────────────────────────
   if (seqRunning) {

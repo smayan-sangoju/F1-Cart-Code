@@ -31,24 +31,29 @@ export default function SerialLog({ logs }) {
         </span>
       </div>
 
-      <div className="serial-log" role="log" aria-live="polite">
-        {logs.length === 0 ? (
-          <div className="log-empty">Waiting for messages&hellip;</div>
-        ) : (
-          logs.map((entry, i) => (
-            <div
-              key={i}
-              className={`log-entry ${TYPE_CLASS[entry.type] ?? 'log-info'}`}
-            >
-              <span className="log-ts">{entry.ts}</span>
-              <span className="log-prefix" aria-hidden="true">
-                {TYPE_PREFIX[entry.type] ?? ' '}
-              </span>
-              <span className="log-msg">{entry.msg}</span>
-            </div>
-          ))
-        )}
-        <div ref={bottomRef} />
+      {/* Scanline overlay wrapper */}
+      <div className="serial-log-wrap">
+        <div className="serial-log" role="log" aria-live="polite">
+          {logs.length === 0 ? (
+            <div className="log-empty">Waiting for messages&hellip;</div>
+          ) : (
+            logs.map((entry, i) => (
+              <div
+                key={i}
+                className={`log-entry ${TYPE_CLASS[entry.type] ?? 'log-info'}`}
+              >
+                <span className="log-ts">{entry.ts}</span>
+                <span className="log-prefix" aria-hidden="true">
+                  {TYPE_PREFIX[entry.type] ?? ' '}
+                </span>
+                <span className="log-msg">{entry.msg}</span>
+              </div>
+            ))
+          )}
+          {/* Blinking cursor at bottom */}
+          <div className="log-cursor" aria-hidden="true">_</div>
+          <div ref={bottomRef} />
+        </div>
       </div>
     </div>
   )

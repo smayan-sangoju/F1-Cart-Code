@@ -5,6 +5,9 @@ export function useSerial() {
   const [portName, setPortName] = useState('')
   const [logs, setLogs] = useState([])
   const [seqRunning, setSeqRunning] = useState(false)
+  const [seqWaiting, setSeqWaiting] = useState(false)
+  const [batteryPercent, setBatteryPercent] = useState(null)
+  const [batteryVoltage, setBatteryVoltage] = useState(null)
 
   const portRef = useRef(null)
   const writerRef = useRef(null)
@@ -41,6 +44,18 @@ export function useSerial() {
             const trimmed = line.replace('\r', '').trim()
             if (!trimmed) continue
 
+            // Battery report — parse silently, don't clutter the log
+            if (trimmed.startsWith('BAT ')) {
+              const parts = trimmed.split(' ')
+              if (parts.length >= 3) {
+                const pct = parseInt(parts[1], 10)
+                const volt = parseFloat(parts[2])
+                if (!isNaN(pct))  setBatteryPercent(pct)
+                if (!isNaN(volt)) setBatteryVoltage(volt)
+              }
+              continue  // skip logging BAT lines
+            }
+
             setLogs(prev => [
               ...prev,
               {
@@ -50,9 +65,9 @@ export function useSerial() {
               },
             ])
 
-            if (trimmed === 'SEQ_DONE') {
-              setSeqRunning(false)
-            }
+            if (trimmed === 'SEQ_DONE')    { setSeqRunning(false); setSeqWaiting(false) }
+            if (trimmed === 'WAITING_BTN') { setSeqWaiting(true) }
+            if (trimmed === 'BTN_START')   { setSeqWaiting(false) }
           }
         }
       } catch (err) {
@@ -149,6 +164,9 @@ export function useSerial() {
     setConnected(false)
     setPortName('')
     setSeqRunning(false)
+    setSeqWaiting(false)
+    setBatteryPercent(null)
+    setBatteryVoltage(null)
     addLog('Disconnected.', 'info')
   }, [addLog])
 
@@ -172,6 +190,9 @@ export function useSerial() {
     logs,
     seqRunning,
     setSeqRunning,
+    seqWaiting,
+    batteryPercent,
+    batteryVoltage,
     connect,
     disconnect,
     sendCommand,
