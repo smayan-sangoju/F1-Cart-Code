@@ -45,7 +45,7 @@ function SequenceTimeline({ steps, totalTime }) {
 }
 
 export default function SequenceBuilder({ serial }) {
-  const { connected, sendCommand, seqRunning, setSeqRunning, seqWaiting } = serial
+  const { connected, sendCommand, seqRunning, seqWaiting } = serial
 
   const [steps,       setSteps]       = useState([])
   const [newDir,      setNewDir]      = useState('Forward')
@@ -78,7 +78,6 @@ export default function SequenceBuilder({ serial }) {
     await sendCommand(`LOAD ${payload}`)
     setTimeout(async () => {
       await sendCommand('SEQ')
-      setSeqRunning(true)
     }, 150)
   }
 

@@ -66,8 +66,8 @@ export function useSerial() {
             ])
 
             if (trimmed === 'SEQ_DONE')    { setSeqRunning(false); setSeqWaiting(false) }
-            if (trimmed === 'WAITING_BTN') { setSeqWaiting(true) }
-            if (trimmed === 'BTN_START')   { setSeqWaiting(false) }
+            if (trimmed === 'WAITING_BTN') { setSeqRunning(true); setSeqWaiting(true) }
+            if (trimmed === 'BTN_START')   { setSeqWaiting(false); setSeqRunning(true) }
           }
         }
       } catch (err) {
