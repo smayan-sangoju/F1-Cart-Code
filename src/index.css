@@ -986,6 +986,26 @@ input, select { font-family: 'DM Sans', system-ui, sans-serif; color: var(--text
 .btn-clear:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
 .btn-clear:disabled              { opacity: 0.30; cursor: not-allowed; }
 
+/* Save to Arduino button */
+.btn-save-seq {
+  background: transparent;
+  color: #60a5fa;
+  border: 1px solid #60a5fa;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+.btn-save-seq:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: #93c5fd;
+  color: #93c5fd;
+}
+.btn-save-seq:disabled { opacity: 0.30; cursor: not-allowed; }
+
 /* Arm Sequence button — prominent */
 .btn-arm-seq {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);

@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <EEPROM.h>
 
 Servo esc;
 
@@ -58,6 +59,39 @@ unsigned long stepStart = 0;
 bool inReverse = false;
 
 String inputBuffer = "";
+
+// ── EEPROM persistence ───────────────────────────────────────
+// Layout: [0] magic byte | [1] stepCount | [2..] steps (6 bytes each)
+//   step = servoVal (int, 2 B) + dur (unsigned long, 4 B)
+const uint8_t EEPROM_MAGIC = 0xF1;
+const int     EEPROM_BASE  = 0;
+
+void saveSequenceToEEPROM() {
+  EEPROM.update(EEPROM_BASE,     EEPROM_MAGIC);
+  EEPROM.update(EEPROM_BASE + 1, (uint8_t)stepCount);
+  int addr = EEPROM_BASE + 2;
+  for (int i = 0; i < stepCount; i++) {
+    EEPROM.put(addr, sequence[i].servoVal); addr += sizeof(int);
+    EEPROM.put(addr, sequence[i].dur);      addr += sizeof(unsigned long);
+  }
+  Serial.print("OK_SAVE ");
+  Serial.println(stepCount);
+}
+
+void loadSequenceFromEEPROM() {
+  if (EEPROM.read(EEPROM_BASE) != EEPROM_MAGIC) return;
+  uint8_t count = EEPROM.read(EEPROM_BASE + 1);
+  if (count == 0 || count > MAX_STEPS) return;
+  stepCount = count;
+  int addr = EEPROM_BASE + 2;
+  for (int i = 0; i < stepCount; i++) {
+    EEPROM.get(addr, sequence[i].servoVal); addr += sizeof(int);
+    EEPROM.get(addr, sequence[i].dur);      addr += sizeof(unsigned long);
+  }
+  seqWaiting = true;   // auto-arm: button press will start it immediately
+  Serial.print("EEPROM_LOADED ");
+  Serial.println(stepCount);
+}
 
 // ── Button debounce ──────────────────────────────────────────
 bool lastBtnReading    = HIGH;
@@ -142,11 +176,12 @@ void onButtonPress() {
 
 void setup() {
   Serial.begin(9600);
-  pinMode(BUTTON_PIN, INPUT_PULLUP);  // button wired between pin 2 & GND
+  pinMode(BUTTON_PIN, INPUT_PULLUP);  // button wired between pin 4 & GND
   esc.attach(ESC_PIN);
   esc.write(NEUTRAL);
   delay(3000);   // ESC arming delay
   Serial.println("READY");
+  loadSequenceFromEEPROM();  // restore saved sequence (auto-arms if found)
 }
 
 
@@ -307,6 +342,13 @@ void handleCommand(String cmd) {
     inReverse  = false;
     esc.write(NEUTRAL);
     Serial.println("OK_STOP");
+
+  } else if (cmd == "SAVE") {
+    if (stepCount == 0) {
+      Serial.println("ERR_EMPTY");
+    } else {
+      saveSequenceToEEPROM();
+    }
 
   } else {
     Serial.print("ERR_UNKNOWN: ");

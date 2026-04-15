@@ -85,6 +85,15 @@ export default function SequenceBuilder({ serial }) {
     await sendCommand('STOP_SEQ')
   }
 
+  const saveSequence = async () => {
+    if (steps.length === 0) return
+    const payload = steps.map(encodeStep).join('|')
+    await sendCommand(`LOAD ${payload}`)
+    setTimeout(async () => {
+      await sendCommand('SAVE')
+    }, 150)
+  }
+
   const totalTime = steps.reduce((s, step) => s + step.duration, 0)
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -186,6 +195,15 @@ export default function SequenceBuilder({ serial }) {
               disabled={steps.length === 0 || seqRunning}
             >
               Clear All
+            </button>
+
+            <button
+              className="btn-save-seq"
+              onClick={saveSequence}
+              disabled={!connected || steps.length === 0 || seqRunning}
+              title="Save to Arduino EEPROM — runs on button press without USB"
+            >
+              💾&nbsp; Save to Arduino
             </button>
 
             {seqRunning ? (
