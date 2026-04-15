@@ -126,6 +126,7 @@ void setMotorForSeq(int val) {
 // Physical button handler
 // ═══════════════════════════════════════════════════════════════
 void onButtonPress() {
+  Serial.println("BTN_PRESSED");   // DEBUG: remove after button verified
   if (seqWaiting && stepCount > 0) {
     seqIndex   = 0;
     stepStart  = millis();
