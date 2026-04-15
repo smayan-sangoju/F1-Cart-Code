@@ -176,11 +176,11 @@ void loop() {
   }
   lastBtnReading = reading;
 
-  // ── Battery reporting ─────────────────────────────────────
-  if (millis() - lastBattReport >= BATT_INTERVAL_MS) {
-    reportBattery();
-    lastBattReport = millis();
-  }
+  // ── Battery reporting (disabled — no voltage divider wired) ──
+  // if (millis() - lastBattReport >= BATT_INTERVAL_MS) {
+  //   reportBattery();
+  //   lastBattReport = millis();
+  // }
 
   // ── Sequence step machine ─────────────────────────────────
   if (seqRunning) {
