@@ -263,7 +263,7 @@ input, select { font-family: 'DM Sans', system-ui, sans-serif; color: var(--text
 
 /* F1 car SVG — side profile */
 .f1-car-svg {
-  height: 52px;
+  height: 48px;
   width: auto;
   flex-shrink: 0;
   filter: drop-shadow(0 0 10px rgba(14, 165, 233, 0.5));

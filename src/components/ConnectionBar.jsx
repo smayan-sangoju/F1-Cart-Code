@@ -1,125 +1,105 @@
 const hasWebSerial =
   typeof navigator !== 'undefined' && 'serial' in navigator
 
-/** Side-profile F1 car silhouette with spinning wheel rims */
+/**
+ * Flat F1 car side-profile silhouette — car faces RIGHT.
+ * Rear wing on left, pointed nose on right, two large wheels with spinning rims.
+ * Flat logo style: no gradients, #0ea5e9 body, #1e293b wheels, #38bdf8 accents.
+ *
+ * Wheel arch math: each arch is a semicircle whose radius equals the tire radius,
+ * so the arch boundary exactly matches the tire circle edge.
+ *   Rear  tire: cx=42,  cy=38, r=12  → arch A 12,12 0 0 1 54,38  from (30,38)
+ *   Front tire: cx=175, cy=38, r=11  → arch A 11,11 0 0 1 186,38 from (164,38)
+ */
 function F1CarSVG() {
   return (
     <svg
       className="f1-car-svg"
-      viewBox="0 0 300 80"
+      viewBox="0 0 220 60"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id="sideGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stopColor="#0369a1" />
-          <stop offset="45%"  stopColor="#0ea5e9" />
-          <stop offset="100%" stopColor="#38bdf8" />
-        </linearGradient>
-      </defs>
+      {/* ══ REAR WING (left side) ══ */}
+      {/* Endplate — tall vertical slab */}
+      <rect x="4" y="5" width="5" height="33" rx="1" fill="#0ea5e9" />
+      {/* Upper wing element */}
+      <rect x="4" y="5" width="30" height="6" rx="1.5" fill="#38bdf8" />
+      {/* Lower wing element / DRS flap */}
+      <rect x="5" y="12" width="27" height="5" rx="1" fill="#38bdf8" />
+      {/* Wing strut connecting to body */}
+      <rect x="19" y="18" width="4" height="19" rx="1" fill="#0ea5e9" />
 
-      {/* ── Ground shadow ── */}
-      <ellipse cx="148" cy="77" rx="115" ry="4" fill="rgba(0,0,0,0.28)" />
+      {/* ══ REAR TYRE (draw before body so body masks upper half) ══ */}
+      <circle cx="42" cy="38" r="12" fill="#1e293b" />
+      {/* Spinning rim + spokes */}
+      <g>
+        <animateTransform
+          attributeName="transform" type="rotate"
+          from="0 42 38" to="360 42 38"
+          dur="3s" repeatCount="indefinite"
+        />
+        <circle cx="42" cy="38" r="8" fill="none" stroke="#38bdf8" strokeWidth="1.5" />
+        <line x1="42" y1="27" x2="42" y2="49" stroke="#38bdf8" strokeWidth="2" />
+        <line x1="30" y1="38" x2="54" y2="38" stroke="#38bdf8" strokeWidth="2" />
+        <line x1="33.5" y1="29.5" x2="50.5" y2="46.5" stroke="#38bdf8" strokeWidth="1.5" />
+        <line x1="50.5" y1="29.5" x2="33.5" y2="46.5" stroke="#38bdf8" strokeWidth="1.5" />
+      </g>
+      {/* Static hub cap */}
+      <circle cx="42" cy="38" r="3.5" fill="#1e293b" />
 
-      {/* ── Motion speed lines (behind car) ── */}
-      <line x1="2"  y1="32" x2="22" y2="32" stroke="rgba(14,165,233,0.28)" strokeWidth="1.5" strokeLinecap="round" />
-      <line x1="2"  y1="39" x2="14" y2="39" stroke="rgba(14,165,233,0.18)" strokeWidth="1"   strokeLinecap="round" />
-      <line x1="2"  y1="25" x2="17" y2="25" stroke="rgba(14,165,233,0.18)" strokeWidth="1"   strokeLinecap="round" />
+      {/* ══ FRONT TYRE ══ */}
+      <circle cx="175" cy="38" r="11" fill="#1e293b" />
+      {/* Spinning rim + spokes */}
+      <g>
+        <animateTransform
+          attributeName="transform" type="rotate"
+          from="0 175 38" to="360 175 38"
+          dur="2.8s" repeatCount="indefinite"
+        />
+        <circle cx="175" cy="38" r="7" fill="none" stroke="#38bdf8" strokeWidth="1.5" />
+        <line x1="175" y1="28" x2="175" y2="48" stroke="#38bdf8" strokeWidth="1.8" />
+        <line x1="165" y1="38" x2="185" y2="38" stroke="#38bdf8" strokeWidth="1.8" />
+        <line x1="167.9" y1="30.9" x2="182.1" y2="45.1" stroke="#38bdf8" strokeWidth="1.3" />
+        <line x1="182.1" y1="30.9" x2="167.9" y2="45.1" stroke="#38bdf8" strokeWidth="1.3" />
+      </g>
+      {/* Static hub cap */}
+      <circle cx="175" cy="38" r="3" fill="#1e293b" />
 
-      {/* ── Rear wing assembly ── */}
-      {/* Vertical strut */}
-      <rect x="22" y="16" width="5" height="30" rx="1" fill="url(#sideGrad)" />
-      {/* Upper wing plane */}
-      <path d="M 6,15 L 32,15 L 32,11 L 8,11 Z" fill="url(#sideGrad)" />
-      {/* Lower wing plane */}
-      <path d="M 9,21 L 32,21 L 32,17 L 11,17 Z" fill="url(#sideGrad)" opacity="0.82" />
-      {/* Wing endplate */}
-      <rect x="5" y="11" width="4" height="30" rx="1.5" fill="url(#sideGrad)" opacity="0.65" />
-
-      {/* ── Main body ── */}
+      {/* ══ MAIN BODY ══
+          Upper edge: nose tip (215,32) → rises left to cockpit peak (y=9) → falls to rear top (22,26)
+          Lower edge: rear floor → wheel arch cutouts → nose underside
+          Arches use sweep=1 (clockwise) = curves upward into body */}
       <path
+        fill="#0ea5e9"
         d="
-          M 35,50 L 35,28
-          Q 44,22 52,21
-          L 82,18 L 122,15
-          Q 136,12 148,10
-          Q 153,9  157,10
-          Q 170,12 184,15
-          L 202,20
-          Q 228,30 254,42
-          L 269,46
-          L 266,50
-          Q 250,48 230,47
-          L 195,47 L 165,47
-          L 120,47 L 78,49
-          L 52,51
+          M 215,32
+          L 200,25 L 185,21 L 175,20 L 158,17 L 140,14
+          Q 128,9 118,9
+          Q 108,13 95,15
+          L 78,17 L 55,18 L 42,20 L 22,26
+          L 22,38
+          L 30,38
+          A 12,12 0 0 1 54,38
+          L 164,38
+          A 11,11 0 0 1 186,38
+          L 193,37 L 200,35
           Z
         "
-        fill="url(#sideGrad)"
       />
 
-      {/* ── Sidepod air intake ── */}
-      <ellipse cx="70" cy="30" rx="7" ry="10" fill="#050d18" stroke="rgba(14,165,233,0.22)" strokeWidth="1.5" />
-
-      {/* ── Engine cover detail ── */}
-      <rect x="108" y="22" width="40" height="7" rx="3.5" fill="rgba(0,0,0,0.28)" />
-
-      {/* ── Cockpit surround + helmet ── */}
+      {/* ══ COCKPIT OPENING — dark arch overlaid on roll hoop bump ══ */}
       <path
-        d="M 136,12 L 143,7 Q 150,5 157,7 L 163,12"
-        fill="#050d18"
-        stroke="#0ea5e9"
-        strokeWidth="0.9"
+        fill="#090f1a"
+        d="M 112,17 L 117,11 Q 125,8 128,8 Q 133,8 138,12 L 142,17 Z"
       />
-      {/* Helmet */}
-      <circle cx="150" cy="11" r="6.5" fill="#0f172a" />
-      <ellipse cx="148" cy="10"  rx="4"  ry="2.5" fill="#1e3a5f" />
-      {/* Visor shine */}
-      <ellipse cx="146" cy="8.5" rx="2"  ry="1.2" fill="rgba(186,230,253,0.55)" />
 
-      {/* ── Floor underline ── */}
-      <rect x="42" y="49" width="175" height="2" rx="1" fill="rgba(255,255,255,0.07)" />
-
-      {/* ── Front wing ── */}
-      <path
-        d="M 263,47 L 284,43 L 292,45 L 292,50 L 284,52 L 263,50 Z"
-        fill="url(#sideGrad)"
-        opacity="0.88"
-      />
-      {/* Front wing endplate */}
-      <rect x="289" y="41" width="4" height="13" rx="1.5" fill="url(#sideGrad)" />
-
-      {/* ── Rear tyre — spinning rim ── */}
-      {/* Outer tyre */}
-      <circle cx="62" cy="63" r="14" fill="#141f2e" stroke="#2d3f55" strokeWidth="1.5" />
-      {/* Tyre sidewall texture ring */}
-      <circle cx="62" cy="63" r="13.2" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="3" />
-      {/* Rotating spokes */}
-      <g>
-        <animateTransform attributeName="transform" type="rotate" from="0 62 63" to="360 62 63" dur="1s" repeatCount="indefinite" />
-        <circle cx="62" cy="63" r="8.5" fill="#0a1420" />
-        <line x1="62" y1="55" x2="62" y2="71" stroke="#334155" strokeWidth="2.5" />
-        <line x1="54" y1="63" x2="70" y2="63" stroke="#334155" strokeWidth="2.5" />
-        <line x1="56" y1="57" x2="68" y2="69" stroke="#334155" strokeWidth="1.8" />
-        <line x1="68" y1="57" x2="56" y2="69" stroke="#334155" strokeWidth="1.8" />
-      </g>
-      {/* Hub cap */}
-      <circle cx="62" cy="63" r="3.5" fill="#475569" />
-
-      {/* ── Front tyre — spinning rim ── */}
-      {/* Outer tyre */}
-      <circle cx="220" cy="63" r="11" fill="#141f2e" stroke="#2d3f55" strokeWidth="1.5" />
-      <circle cx="220" cy="63" r="10.3" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="2.5" />
-      {/* Rotating spokes */}
-      <g>
-        <animateTransform attributeName="transform" type="rotate" from="0 220 63" to="360 220 63" dur="0.85s" repeatCount="indefinite" />
-        <circle cx="220" cy="63" r="6.5" fill="#0a1420" />
-        <line x1="220" y1="57" x2="220" y2="69" stroke="#334155" strokeWidth="2" />
-        <line x1="214" y1="63" x2="226" y2="63" stroke="#334155" strokeWidth="2" />
-        <line x1="215" y1="58" x2="225" y2="68" stroke="#334155" strokeWidth="1.5" />
-        <line x1="225" y1="58" x2="215" y2="68" stroke="#334155" strokeWidth="1.5" />
-      </g>
-      <circle cx="220" cy="63" r="3" fill="#475569" />
+      {/* ══ FRONT WING (right side — furthest forward) ══ */}
+      {/* Upper cascade element */}
+      <rect x="188" y="39" width="27" height="5" rx="1" fill="#38bdf8" />
+      {/* Main wing plane */}
+      <rect x="186" y="44" width="31" height="6" rx="1" fill="#0ea5e9" />
+      {/* Right endplate */}
+      <rect x="215" y="37" width="4" height="14" rx="1" fill="#0ea5e9" />
     </svg>
   )
 }
