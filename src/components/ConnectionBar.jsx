@@ -115,51 +115,8 @@ function SignalBars({ connected }) {
   )
 }
 
-/** Battery level indicator */
-function BatteryIndicator({ percent, voltage, connected }) {
-  const hasData = connected && percent !== null
-
-  const color = !hasData
-    ? '#475569'
-    : percent >= 50
-      ? '#22c55e'
-      : percent >= 20
-        ? '#f59e0b'
-        : '#ef4444'
-
-  // Fill bar inside battery body (max inner width ≈ 14px)
-  const fillW = hasData ? Math.max(1, Math.round((percent / 100) * 14)) : 0
-
-  const isCritical = hasData && percent < 20
-
-  return (
-    <div className={`battery-indicator${!hasData ? ' batt-nodata' : ''}${isCritical ? ' batt-critical' : ''}`}>
-      <svg className="battery-icon" viewBox="0 0 22 13" width="28" height="18" aria-hidden="true">
-        {/* Battery body outline */}
-        <rect x="0.5" y="0.5" width="18" height="12" rx="2" fill="none" stroke={color} strokeWidth="1.5" />
-        {/* Positive terminal nub */}
-        <rect x="19" y="3.5" width="2.5" height="6" rx="1" fill={color} />
-        {/* Fill level */}
-        {fillW > 0 && (
-          <rect x="2" y="2" width={fillW} height="9" rx="1" fill={color} />
-        )}
-      </svg>
-      <div className="battery-text">
-        <span className="battery-pct">
-          {hasData ? `${percent}%` : '--%'}
-        </span>
-        {hasData && voltage !== null && (
-          <span className="battery-volt">{voltage.toFixed(1)}V</span>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function ConnectionBar({ serial }) {
-  const { connected, portName, connect, disconnect, batteryPercent, batteryVoltage } = serial
-
-  const showLowBattWarning = connected && batteryPercent !== null && batteryPercent < 15
+  const { connected, portName, connect, disconnect } = serial
 
   return (
     <header className="connection-bar">
@@ -199,13 +156,6 @@ export default function ConnectionBar({ serial }) {
 
         {/* ── Status + connect right ── */}
         <div className="connection-status">
-          {/* Battery */}
-          <BatteryIndicator
-            percent={batteryPercent}
-            voltage={batteryVoltage}
-            connected={connected}
-          />
-
           {/* Signal bars */}
           <SignalBars connected={connected} />
 
@@ -233,12 +183,6 @@ export default function ConnectionBar({ serial }) {
         </div>
       </div>
 
-      {/* Low battery warning */}
-      {showLowBattWarning && (
-        <div className="batt-warning-bar">
-          ⚠ Low battery — charge soon
-        </div>
-      )}
     </header>
   )
 }
