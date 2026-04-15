@@ -83,7 +83,6 @@ export default function SequenceBuilder({ serial }) {
 
   const stopSequence = async () => {
     await sendCommand('STOP_SEQ')
-    setSeqRunning(false)
   }
 
   const totalTime = steps.reduce((s, step) => s + step.duration, 0)
