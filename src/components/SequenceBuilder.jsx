@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-const DIRECTIONS = ['Forward', 'Reverse', 'Stop']
-const SPEEDS     = ['Slow', 'Medium', 'Fast']
+const DIRECTIONS  = ['Forward', 'Reverse', 'Stop']
+const PRESET_SPEEDS = ['Slow', 'Medium', 'Fast']
 
 /** Convert a step object to the Arduino LOAD wire format */
 function encodeStep(step) {
@@ -9,7 +9,15 @@ function encodeStep(step) {
     return `S,${Math.round(step.duration * 1000)}`
   }
   const dir = step.direction === 'Forward' ? 'F' : 'R'
-  const spd = SPEEDS.indexOf(step.speed) + 1
+
+  if (step.speed?.isCustom) {
+    // Custom profile: use spd=0 to signal raw servo value
+    // Forward uses servoVal directly; reverse mirrors around neutral (90)
+    const val = dir === 'F' ? step.speed.servoVal : 180 - step.speed.servoVal
+    return `${dir},0,${val},${Math.round(step.duration * 1000)}`
+  }
+
+  const spd = PRESET_SPEEDS.indexOf(step.speed) + 1
   return `${dir},${spd},${Math.round(step.duration * 1000)}`
 }
 
@@ -35,7 +43,7 @@ function SequenceTimeline({ steps, totalTime }) {
               key={step.id}
               className={`timeline-seg seg-${mod}`}
               style={{ width: `${pct}%` }}
-              title={`${step.direction}${step.speed ? ' · ' + step.speed : ''} · ${step.duration}s`}
+              title={`${step.direction}${step.speed ? ' · ' + (step.speed.isCustom ? step.speed.name : step.speed) : ''} · ${step.duration}s`}
             />
           )
         })}
@@ -44,13 +52,25 @@ function SequenceTimeline({ steps, totalTime }) {
   )
 }
 
-export default function SequenceBuilder({ serial }) {
+export default function SequenceBuilder({ serial, speedProfiles }) {
   const { connected, sendCommand, seqRunning, seqWaiting } = serial
+  const { profiles } = speedProfiles
 
   const [steps,       setSteps]       = useState([])
   const [newDir,      setNewDir]      = useState('Forward')
   const [newSpeed,    setNewSpeed]    = useState('Slow')
   const [newDuration, setNewDuration] = useState('2')
+
+  // Resolve the newSpeed select value into a speed value for the step
+  const resolveSpeed = () => {
+    if (newDir === 'Stop') return null
+    if (newSpeed.startsWith('custom:')) {
+      const id = Number(newSpeed.split(':')[1])
+      const p  = profiles.find(p => p.id === id)
+      return p ? { name: p.name, servoVal: p.servoVal, isCustom: true } : 'Slow'
+    }
+    return newSpeed
+  }
 
   // ── Add step ─────────────────────────────────────────────────────────────
   const addStep = () => {
@@ -61,7 +81,7 @@ export default function SequenceBuilder({ serial }) {
       {
         id:        Date.now(),
         direction: newDir,
-        speed:     newDir === 'Stop' ? null : newSpeed,
+        speed:     resolveSpeed(),
         duration:  dur,
       },
     ])
@@ -96,6 +116,12 @@ export default function SequenceBuilder({ serial }) {
 
   const totalTime = steps.reduce((s, step) => s + step.duration, 0)
 
+  const speedLabel = (speed) => {
+    if (!speed) return ''
+    if (speed.isCustom) return speed.name
+    return speed
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="card sequence-builder">
@@ -123,7 +149,16 @@ export default function SequenceBuilder({ serial }) {
           disabled={newDir === 'Stop'}
           className="select"
         >
-          {SPEEDS.map(s => <option key={s}>{s}</option>)}
+          <optgroup label="Presets">
+            {PRESET_SPEEDS.map(s => <option key={s} value={s}>{s}</option>)}
+          </optgroup>
+          {profiles.length > 0 && (
+            <optgroup label="Custom Profiles">
+              {profiles.map(p => (
+                <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
 
         <input
@@ -161,8 +196,8 @@ export default function SequenceBuilder({ serial }) {
                 <span className={`step-badge badge-${mod}`}>{i + 1}</span>
                 <span className="step-dir">{step.direction}</span>
                 {step.speed && (
-                  <span className={`step-speed-tag tag-${mod}`}>
-                    {step.speed}
+                  <span className={`step-speed-tag tag-${mod}${step.speed.isCustom ? ' tag-custom' : ''}`}>
+                    {speedLabel(step.speed)}
                   </span>
                 )}
                 <span className="step-duration">{step.duration}s</span>

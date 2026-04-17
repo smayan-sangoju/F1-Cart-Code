@@ -28,13 +28,13 @@ const unsigned long BATT_INTERVAL_MS = 3000;
 
 const int NEUTRAL   = 90;
 
-const int FWD_SLOW  = 105;   // ≈ 20 cm/s  — well below old working range
-const int FWD_MED   = 130;   // ≈ 40 cm/s  — midpoint, clearly faster than slow
-const int FWD_FAST  = 150;   // ≈ 60 cm/s  — your old "medium" that actually worked
+const int FWD_SLOW  = 97;    // slow
+const int FWD_MED   = 110;   // medium
+const int FWD_FAST  = 120;   // fast
 
-const int REV_SLOW  = 75;    // ≈ 20 cm/s  — mirror of forward slow
-const int REV_MED   = 55;    // ≈ 40 cm/s  — mirror of forward medium
-const int REV_FAST  = 40;    // ≈ 60 cm/s  — mirror of forward fast
+const int REV_SLOW  = 83;    // slow
+const int REV_MED   = 70;    // medium
+const int REV_FAST  = 60;    // fast
 
 // ── Sequence storage ─────────────────────────────────────────
 struct Step {
@@ -282,6 +282,24 @@ void handleCommand(String cmd) {
     enterReverse(REV_FAST);
     Serial.println("OK_REV3");
 
+  // ── Custom speed ───────────────────────────────────────────
+  } else if (cmd.startsWith("FWD CUSTOM ")) {
+    int val = constrain(cmd.substring(11).toInt(), 92, 130);
+    seqRunning = false;
+    inReverse  = false;
+    esc.write(val);
+    Serial.println("OK_FWD_CUSTOM");
+
+  } else if (cmd.startsWith("REV CUSTOM ")) {
+    int val = constrain(cmd.substring(11).toInt(), 50, 88);
+    seqRunning = false;
+    if (!inReverse) {
+      enterReverse(val);
+    } else {
+      esc.write(val);
+    }
+    Serial.println("OK_REV_CUSTOM");
+
   // ── Load sequence ──────────────────────────────────────────
   } else if (cmd.startsWith("LOAD ")) {
     String payload = cmd.substring(5);
@@ -304,17 +322,27 @@ void handleCommand(String cmd) {
       } else {
         int c2  = token.indexOf(',', c1 + 1);
         int spd = token.substring(c1 + 1, c2).toInt();
-        unsigned long dur = token.substring(c2 + 1).toInt();
-
+        unsigned long dur;
         int val = NEUTRAL;
-        if (dir == "F") {
-          if      (spd == 1) val = FWD_SLOW;
-          else if (spd == 2) val = FWD_MED;
-          else if (spd == 3) val = FWD_FAST;
-        } else if (dir == "R") {
-          if      (spd == 1) val = REV_SLOW;
-          else if (spd == 2) val = REV_MED;
-          else if (spd == 3) val = REV_FAST;
+
+        if (spd == 0) {
+          // Custom speed: F,0,<servoVal>,<durMs>
+          int c3 = token.indexOf(',', c2 + 1);
+          int rawVal = token.substring(c2 + 1, c3).toInt();
+          dur = token.substring(c3 + 1).toInt();
+          if (dir == "F") val = constrain(rawVal, 92, 130);
+          else if (dir == "R") val = constrain(rawVal, 50, 88);
+        } else {
+          dur = token.substring(c2 + 1).toInt();
+          if (dir == "F") {
+            if      (spd == 1) val = FWD_SLOW;
+            else if (spd == 2) val = FWD_MED;
+            else if (spd == 3) val = FWD_FAST;
+          } else if (dir == "R") {
+            if      (spd == 1) val = REV_SLOW;
+            else if (spd == 2) val = REV_MED;
+            else if (spd == 3) val = REV_FAST;
+          }
         }
 
         sequence[stepCount].servoVal = val;
