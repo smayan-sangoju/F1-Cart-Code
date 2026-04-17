@@ -28,13 +28,13 @@ const unsigned long BATT_INTERVAL_MS = 3000;
 
 const int NEUTRAL   = 90;
 
-const int FWD_SLOW  = 97;    // slow
-const int FWD_MED   = 110;   // medium
-const int FWD_FAST  = 120;   // fast
+const int FWD_SLOW  = 108;   // slow
+const int FWD_MED   = 130;   // medium
+const int FWD_FAST  = 150;   // fast
 
-const int REV_SLOW  = 83;    // slow
-const int REV_MED   = 70;    // medium
-const int REV_FAST  = 60;    // fast
+const int REV_SLOW  = 72;    // slow
+const int REV_MED   = 55;    // medium
+const int REV_FAST  = 40;    // fast
 
 // ── Sequence storage ─────────────────────────────────────────
 struct Step {
