@@ -6,12 +6,28 @@ const SPEEDS = [
   { label: 'Fast',   level: 3 },
 ]
 
-// Servo value range exposed to the custom slider
-const CUSTOM_MIN = 92
-const CUSTOM_MAX = 125
+const CUSTOM_MIN  = 93
+const CUSTOM_MAX  = 155
+const CUSTOM_STEP = 3
 
-// Where the presets fall on the slider (for tick marks)
-const PRESET_VALS = [97, 110, 120]
+// Preset servo values for label hints
+const PRESET_SLOW = 108
+const PRESET_MED  = 130
+const PRESET_FAST = 150
+
+function speedLabel(val) {
+  if (val < PRESET_SLOW - 5)  return 'Below Slow'
+  if (val < PRESET_SLOW + 5)  return '~ Slow'
+  if (val < PRESET_MED  - 5)  return 'Slow → Medium'
+  if (val < PRESET_MED  + 5)  return '~ Medium'
+  if (val < PRESET_FAST - 5)  return 'Medium → Fast'
+  if (val < PRESET_FAST + 5)  return '~ Fast'
+  return 'Above Fast'
+}
+
+function speedPct(val) {
+  return Math.round(((val - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100)
+}
 
 /** Signal-bar style speed meter — fills proportionally to level (1-3) */
 function SpeedBars({ level }) {
@@ -27,36 +43,62 @@ function SpeedBars({ level }) {
   )
 }
 
-/** Slider with ghost tick marks at the three preset positions */
-function CustomSlider({ value, onChange, onCommit, color }) {
-  const pct = (v) => ((v - CUSTOM_MIN) / (CUSTOM_MAX - CUSTOM_MIN)) * 100
+/** +/− stepper that sends immediately on each click — no stale-closure issues */
+function CustomStepper({ value, onChange, onFire, variant, disabled }) {
+  const pct = speedPct(value)
+  const label = speedLabel(value)
+
+  const adjust = (delta) => {
+    const next = Math.max(CUSTOM_MIN, Math.min(CUSTOM_MAX, value + delta))
+    onChange(next)
+    onFire(next)
+  }
 
   return (
-    <div className="custom-slider-wrap">
-      <div className="custom-slider-track-marks">
-        {PRESET_VALS.map((v, i) => (
-          <span
-            key={i}
-            className="custom-slider-mark"
-            style={{ left: `${pct(v)}%`, '--mark-color': `var(${color})` }}
+    <div className={`custom-stepper custom-stepper-${variant}`}>
+      <button
+        className="stepper-btn stepper-dec"
+        onClick={() => adjust(-CUSTOM_STEP)}
+        disabled={disabled || value <= CUSTOM_MIN}
+        aria-label="Decrease speed"
+      >
+        −
+      </button>
+
+      <div className="stepper-display">
+        <div className="stepper-bar-track">
+          <div
+            className={`stepper-bar-fill fill-${variant}`}
+            style={{ width: `${pct}%` }}
           />
-        ))}
+          {/* Preset tick marks */}
+          {[PRESET_SLOW, PRESET_MED, PRESET_FAST].map(v => (
+            <div
+              key={v}
+              className={`stepper-tick tick-${variant}`}
+              style={{ left: `${speedPct(v)}%` }}
+            />
+          ))}
+        </div>
+        <div className="stepper-meta">
+          <span className="stepper-label">{label}</span>
+          <span className="stepper-pct">{pct}%</span>
+        </div>
       </div>
-      <input
-        type="range"
-        className={`custom-slider custom-slider-${color === '--blue' ? 'fwd' : 'rev'}`}
-        min={CUSTOM_MIN}
-        max={CUSTOM_MAX}
-        value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        onMouseUp={onCommit}
-        onTouchEnd={onCommit}
-      />
+
+      <button
+        className="stepper-btn stepper-inc"
+        onClick={() => adjust(CUSTOM_STEP)}
+        disabled={disabled || value >= CUSTOM_MAX}
+        aria-label="Increase speed"
+      >
+        +
+      </button>
     </div>
   )
 }
 
-/** Inline save-profile form that appears when the save button is clicked */
+/** Inline save-profile form */
 function SaveProfileForm({ servoVal, onSave, onCancel }) {
   const [name, setName] = useState('')
 
@@ -92,11 +134,11 @@ export default function MotionControls({ serial, speedProfiles }) {
   const { connected, sendCommand } = serial
   const { profiles, addProfile, removeProfile } = speedProfiles
 
-  const [activeCmd, setActiveCmd]     = useState(null)
-  const [customFwd, setCustomFwd]     = useState(110)
-  const [customRev, setCustomRev]     = useState(110)
-  const [savingFwd, setSavingFwd]     = useState(false)
-  const [savingRev, setSavingRev]     = useState(false)
+  const [activeCmd, setActiveCmd] = useState(null)
+  const [customFwd, setCustomFwd] = useState(118)
+  const [customRev, setCustomRev] = useState(118)
+  const [savingFwd, setSavingFwd] = useState(false)
+  const [savingRev, setSavingRev] = useState(false)
 
   const fire = (cmd) => {
     sendCommand(cmd)
@@ -108,15 +150,16 @@ export default function MotionControls({ serial, speedProfiles }) {
     setActiveCmd('STOP')
   }
 
-  const fireCustomFwd = () => {
+  // Accept value directly — avoids stale React state closure
+  const fireCustomFwd = (val) => {
     if (!connected) return
-    sendCommand(`FWD CUSTOM ${customFwd}`)
+    sendCommand(`FWD CUSTOM ${val}`)
     setActiveCmd('FWD CUSTOM')
   }
 
-  const fireCustomRev = () => {
+  const fireCustomRev = (val) => {
     if (!connected) return
-    const revVal = 180 - customRev
+    const revVal = 180 - val
     sendCommand(`REV CUSTOM ${revVal}`)
     setActiveCmd('REV CUSTOM')
   }
@@ -152,13 +195,15 @@ export default function MotionControls({ serial, speedProfiles }) {
             )
           })}
         </div>
+
         <div className={`custom-speed-row${activeCmd === 'FWD CUSTOM' ? ' custom-active-fwd' : ''}`}>
           <span className="custom-speed-label">Custom</span>
-          <CustomSlider
+          <CustomStepper
             value={customFwd}
             onChange={setCustomFwd}
-            onCommit={fireCustomFwd}
-            color="--blue"
+            onFire={fireCustomFwd}
+            variant="fwd"
+            disabled={!connected}
           />
           <button
             className="btn-save-profile"
@@ -168,6 +213,7 @@ export default function MotionControls({ serial, speedProfiles }) {
             +
           </button>
         </div>
+
         {savingFwd && (
           <SaveProfileForm
             servoVal={customFwd}
@@ -197,13 +243,15 @@ export default function MotionControls({ serial, speedProfiles }) {
             )
           })}
         </div>
+
         <div className={`custom-speed-row${activeCmd === 'REV CUSTOM' ? ' custom-active-rev' : ''}`}>
           <span className="custom-speed-label">Custom</span>
-          <CustomSlider
+          <CustomStepper
             value={customRev}
             onChange={setCustomRev}
-            onCommit={fireCustomRev}
-            color="--purple"
+            onFire={fireCustomRev}
+            variant="rev"
+            disabled={!connected}
           />
           <button
             className="btn-save-profile"
@@ -213,6 +261,7 @@ export default function MotionControls({ serial, speedProfiles }) {
             +
           </button>
         </div>
+
         {savingRev && (
           <SaveProfileForm
             servoVal={customRev}
@@ -230,6 +279,7 @@ export default function MotionControls({ serial, speedProfiles }) {
             {profiles.map(p => (
               <div key={p.id} className="profile-chip">
                 <span className="profile-chip-name">{p.name}</span>
+                <span className="profile-chip-speed">{speedPct(p.servoVal)}%</span>
                 <button
                   className="profile-chip-remove"
                   onClick={() => removeProfile(p.id)}
