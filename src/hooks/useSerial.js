@@ -66,9 +66,10 @@ export function useSerial() {
             ])
 
             if (trimmed === 'SEQ_DONE')    { setSeqRunning(false); setSeqWaiting(false) }
+            if (trimmed === 'SEQ_ARMED')   { setSeqRunning(false); setSeqWaiting(true)  }
             if (trimmed === 'OK_STOP')     { setSeqRunning(false); setSeqWaiting(false) }
-            if (trimmed === 'WAITING_BTN') { setSeqRunning(true);  setSeqWaiting(true) }
-            if (trimmed === 'BTN_START')   { setSeqWaiting(false); setSeqRunning(true) }
+            if (trimmed === 'WAITING_BTN') { setSeqRunning(true);  setSeqWaiting(true)  }
+            if (trimmed === 'BTN_START')   { setSeqWaiting(false); setSeqRunning(true)  }
           }
         }
       } catch (err) {

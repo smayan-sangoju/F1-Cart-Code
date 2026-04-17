@@ -226,7 +226,9 @@ void loop() {
         esc.write(NEUTRAL);
         seqRunning = false;
         inReverse  = false;
+        seqWaiting = true;   // re-arm so button can run it again
         Serial.println("SEQ_DONE");
+        Serial.println("SEQ_ARMED");
       } else {
         setMotorForSeq(sequence[seqIndex].servoVal);
         stepStart = now;
@@ -242,10 +244,12 @@ void handleCommand(String cmd) {
 
   if (cmd == "STOP") {
     seqRunning = false;
-    seqWaiting = false;
     inReverse  = false;
     esc.write(NEUTRAL);
+    // Re-arm for next button press if a sequence is loaded
+    seqWaiting = (stepCount > 0);
     Serial.println("OK_STOP");
+    if (seqWaiting) Serial.println("SEQ_ARMED");
 
   // ── Forward (direct write, no brake dance needed) ──────────
   } else if (cmd == "FWD 1") {
@@ -376,6 +380,7 @@ void handleCommand(String cmd) {
       Serial.println("ERR_EMPTY");
     } else {
       saveSequenceToEEPROM();
+      seqWaiting = true;   // arm immediately so button press starts it
     }
 
   } else {
