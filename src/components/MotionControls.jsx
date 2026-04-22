@@ -11,17 +11,16 @@ const CUSTOM_MAX  = 155
 const CUSTOM_STEP = 3
 
 // Preset servo values for label hints
-const PRESET_SLOW = 108
-const PRESET_MED  = 130
-const PRESET_FAST = 150
+const PRESET_SLOW = 94
+const PRESET_MED  = 95
+const PRESET_FAST = 97
 
 function speedLabel(val) {
-  if (val < PRESET_SLOW - 5)  return 'Below Slow'
-  if (val < PRESET_SLOW + 5)  return '~ Slow'
-  if (val < PRESET_MED  - 5)  return 'Slow → Medium'
-  if (val < PRESET_MED  + 5)  return '~ Medium'
-  if (val < PRESET_FAST - 5)  return 'Medium → Fast'
-  if (val < PRESET_FAST + 5)  return '~ Fast'
+  const pct = speedPct(val)
+  if (pct < 1)  return 'Below Slow'
+  if (pct < 3)  return '~ Slow'
+  if (pct < 5)  return '~ Medium'
+  if (pct < 7)  return '~ Fast'
   return 'Above Fast'
 }
 

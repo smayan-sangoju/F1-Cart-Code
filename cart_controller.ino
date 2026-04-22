@@ -9,15 +9,12 @@ const int BUTTON_PIN = 4;   // Physical start button — wire between pin 2 and 
 // ── Speed calibration ────────────────────────────────────────
 // Neutral = 90.  Forward > 90.  Reverse < 90.
 //
-// Your old FWD_MED (150) was giving ~40 cm/s and working.
-// That becomes the new FAST reference point.  Everything else
-// is spaced relative to that so the three speeds are clearly
-// distinguishable and map to the teacher's targets:
+// 6% on the custom slider = servo 97, verified as good for fast (~60 cm/s).
+// Slow/medium are scaled proportionally (2% and 4%).
 //
 //   Slow   ≈ 20 cm/s     Medium ≈ 40 cm/s     Fast ≈ 60 cm/s
 //
-// TUNING: adjust these ±5 at a time on the Vernier track.
-// Measure with a stopwatch over 1 m to verify.
+// TUNING: adjust ±1 at a time on the Vernier track.
 
 const int BATT_PIN = A0;
 const float VDIVIDER_RATIO = 2.0;
@@ -28,13 +25,13 @@ const unsigned long BATT_INTERVAL_MS = 3000;
 
 const int NEUTRAL   = 90;
 
-const int FWD_SLOW  = 108;   // slow
-const int FWD_MED   = 130;   // medium
-const int FWD_FAST  = 150;   // fast
+const int FWD_SLOW  = 94;    // ~20 cm/s (2% custom)
+const int FWD_MED   = 95;    // ~40 cm/s (4% custom)
+const int FWD_FAST  = 97;    // ~60 cm/s (6% custom)
 
-const int REV_SLOW  = 72;    // slow
-const int REV_MED   = 55;    // medium
-const int REV_FAST  = 40;    // fast
+const int REV_SLOW  = 86;    // ~20 cm/s
+const int REV_MED   = 85;    // ~40 cm/s
+const int REV_FAST  = 83;    // ~60 cm/s
 
 // ── Sequence storage ─────────────────────────────────────────
 struct Step {
