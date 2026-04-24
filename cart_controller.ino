@@ -22,12 +22,12 @@ const int NEUTRAL   = 90;
 
 // Motor wired backwards: below neutral = physical forward, above neutral = physical backward
 const int FWD_SLOW  = 98;    // ~20 cm/s  (above neutral = physical forward)
-const int FWD_MED   = 100;   // ~40 cm/s
-const int FWD_FAST  = 103;   // ~60 cm/s
+const int FWD_MED   = 102;   // ~40 cm/s
+const int FWD_FAST  = 106;   // ~60 cm/s
 
 const int REV_SLOW  = 84;    // ~20 cm/s  (below neutral = physical reverse)
-const int REV_MED   = 79;    // ~40 cm/s
-const int REV_FAST  = 74;    // ~60 cm/s
+const int REV_MED   = 77;    // ~40 cm/s
+const int REV_FAST  = 71;    // ~60 cm/s
 
 // Forward kicks above neutral; reverse kicks further below
 const int KICK_F1_VAL = 107; const int KICK_F1_MS = 280;  // Slow fwd

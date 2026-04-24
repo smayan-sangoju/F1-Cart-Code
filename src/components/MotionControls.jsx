@@ -10,13 +10,13 @@ const SPEEDS = [
 const FWD_MIN  = 93
 const FWD_MAX  = 113  // tighter max so presets spread across bar
 const FWD_STEP = 2
-const FWD_PRESETS = [98, 100, 103]   // Slow / Med / Fast
+const FWD_PRESETS = [98, 102, 106]   // Slow / Med / Fast
 
 // Reverse: below neutral, lower = faster
 const REV_MIN  = 65   // tighter min so presets spread across bar
 const REV_MAX  = 88
 const REV_STEP = 2
-const REV_PRESETS = [84, 79, 74]     // Slow / Med / Fast
+const REV_PRESETS = [84, 77, 71]     // Slow / Med / Fast
 
 function fwdPct(val) {
   return Math.round(((val - FWD_MIN) / (FWD_MAX - FWD_MIN)) * 100)
