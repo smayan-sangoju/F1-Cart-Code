@@ -20,13 +20,22 @@ const unsigned long BATT_INTERVAL_MS = 3000;
 
 const int NEUTRAL   = 90;
 
-const int FWD_SLOW  = 97;    // ~20 cm/s
+// Motor wired backwards: below neutral = physical forward, above neutral = physical backward
+const int FWD_SLOW  = 98;    // ~20 cm/s  (above neutral = physical forward)
 const int FWD_MED   = 100;   // ~40 cm/s
-const int FWD_FAST  = 105;   // ~60 cm/s
+const int FWD_FAST  = 103;   // ~60 cm/s
 
-const int REV_SLOW  = 83;    // ~20 cm/s
-const int REV_MED   = 80;    // ~40 cm/s
-const int REV_FAST  = 75;    // ~60 cm/s
+const int REV_SLOW  = 84;    // ~20 cm/s  (below neutral = physical reverse)
+const int REV_MED   = 79;    // ~40 cm/s
+const int REV_FAST  = 74;    // ~60 cm/s
+
+// Forward kicks above neutral; reverse kicks further below
+const int KICK_F1_VAL = 107; const int KICK_F1_MS = 280;  // Slow fwd
+const int KICK_F2_VAL = 110; const int KICK_F2_MS = 200;  // Med fwd
+const int KICK_F3_VAL = 114; const int KICK_F3_MS = 150;  // Fast fwd
+const int KICK_R1_VAL = 73;  const int KICK_R1_MS = 280;  // Slow rev
+const int KICK_R2_VAL = 70;  const int KICK_R2_MS = 200;  // Med rev
+const int KICK_R3_VAL = 65;  const int KICK_R3_MS = 150;  // Fast rev
 
 // ── Sequence storage ─────────────────────────────────────────
 struct Step {
@@ -106,6 +115,32 @@ void reportBattery() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Soft-start helpers — kick past cogging then settle at target
+// ═══════════════════════════════════════════════════════════════
+// FWD is above neutral — direct write, no brake dance needed.
+void softStartFwd(int targetVal) {
+  int kickVal, kickMs;
+  if      (targetVal <= FWD_SLOW) { kickVal = KICK_F1_VAL; kickMs = KICK_F1_MS; }
+  else if (targetVal <= FWD_MED)  { kickVal = KICK_F2_VAL; kickMs = KICK_F2_MS; }
+  else                             { kickVal = KICK_F3_VAL; kickMs = KICK_F3_MS; }
+  inReverse = false;
+  esc.write(kickVal);
+  delay(kickMs);
+  esc.write(targetVal);
+}
+
+// REV is below neutral — needs brake dance to arm ESC.
+void softStartRev(int targetVal) {
+  int kickVal, kickMs;
+  if      (targetVal >= REV_SLOW) { kickVal = KICK_R1_VAL; kickMs = KICK_R1_MS; }
+  else if (targetVal >= REV_MED)  { kickVal = KICK_R2_VAL; kickMs = KICK_R2_MS; }
+  else                             { kickVal = KICK_R3_VAL; kickMs = KICK_R3_MS; }
+  enterReverse(kickVal);
+  delay(kickMs);
+  esc.write(targetVal);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Reverse helper — the core fix
 // ═══════════════════════════════════════════════════════════════
 // Most brushless ESC + Servo library combos ignore values < 90
@@ -118,12 +153,12 @@ void reportBattery() {
 
 void enterReverse(int val) {
   esc.write(NEUTRAL);
-  delay(100);
-  esc.write(NEUTRAL - 15);   // brief brake pulse
-  delay(150);
+  delay(200);
+  esc.write(NEUTRAL - 35);   // strong brake pulse (55) to reliably arm ESC
+  delay(400);
   esc.write(NEUTRAL);
-  delay(100);
-  esc.write(val);             // actual reverse throttle
+  delay(200);
+  esc.write(val);
   inReverse = true;
 }
 
@@ -155,11 +190,18 @@ void onButtonPress() {
   Serial.println("BTN_PRESSED");   // DEBUG: remove after button verified
   if (seqWaiting && stepCount > 0) {
     seqIndex   = 0;
-    stepStart  = millis();
     seqRunning = true;
     seqWaiting = false;
     inReverse  = false;
-    setMotorForSeq(sequence[0].servoVal);
+    int firstVal = sequence[0].servoVal;
+    if (firstVal > NEUTRAL) {
+      softStartFwd(firstVal);
+    } else if (firstVal < NEUTRAL) {
+      softStartRev(firstVal);
+    } else {
+      esc.write(NEUTRAL);
+    }
+    stepStart = millis();        // set AFTER kickstart so step duration is accurate
     Serial.println("BTN_START");
     Serial.println("OK_SEQ");
   }
@@ -243,57 +285,48 @@ void handleCommand(String cmd) {
     Serial.println("OK_STOP");
     if (seqWaiting) Serial.println("SEQ_ARMED");
 
-  // ── Forward (direct write, no brake dance needed) ──────────
   } else if (cmd == "FWD 1") {
     seqRunning = false;
-    inReverse  = false;
-    esc.write(FWD_SLOW);
+    softStartFwd(FWD_SLOW);
     Serial.println("OK_FWD1");
 
   } else if (cmd == "FWD 2") {
     seqRunning = false;
-    inReverse  = false;
-    esc.write(FWD_MED);
+    softStartFwd(FWD_MED);
     Serial.println("OK_FWD2");
 
   } else if (cmd == "FWD 3") {
     seqRunning = false;
-    inReverse  = false;
-    esc.write(FWD_FAST);
+    softStartFwd(FWD_FAST);
     Serial.println("OK_FWD3");
 
-  // ── Reverse (uses brake dance to arm ESC for reverse) ──────
   } else if (cmd == "REV 1") {
     seqRunning = false;
-    enterReverse(REV_SLOW);
+    softStartRev(REV_SLOW);
     Serial.println("OK_REV1");
 
   } else if (cmd == "REV 2") {
     seqRunning = false;
-    enterReverse(REV_MED);
+    softStartRev(REV_MED);
     Serial.println("OK_REV2");
 
   } else if (cmd == "REV 3") {
     seqRunning = false;
-    enterReverse(REV_FAST);
+    softStartRev(REV_FAST);
     Serial.println("OK_REV3");
 
   // ── Custom speed ───────────────────────────────────────────
   } else if (cmd.startsWith("FWD CUSTOM ")) {
     int val = constrain(cmd.substring(11).toInt(), 92, 130);
     seqRunning = false;
-    inReverse  = false;
+    inReverse = false;
     esc.write(val);
     Serial.println("OK_FWD_CUSTOM");
 
   } else if (cmd.startsWith("REV CUSTOM ")) {
     int val = constrain(cmd.substring(11).toInt(), 50, 88);
     seqRunning = false;
-    if (!inReverse) {
-      enterReverse(val);
-    } else {
-      esc.write(val);
-    }
+    if (!inReverse) enterReverse(val); else esc.write(val);
     Serial.println("OK_REV_CUSTOM");
 
   // ── Load sequence ──────────────────────────────────────────
