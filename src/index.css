@@ -1116,6 +1116,22 @@ input, select { font-family: 'DM Sans', system-ui, sans-serif; color: var(--text
 .step-rev { border-left-color: var(--purple); }
 .step-stp { border-left-color: var(--border); }
 
+.step-active {
+  background: #0e1829 !important;
+  box-shadow: 0 0 0 1px rgba(14,165,233,0.4), 0 2px 14px rgba(0,0,0,0.3);
+}
+.step-active.step-rev {
+  box-shadow: 0 0 0 1px rgba(168,85,247,0.4), 0 2px 14px rgba(0,0,0,0.3);
+}
+
+.badge-running {
+  animation: badge-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes badge-pulse {
+  from { opacity: 0.6; transform: scale(0.95); }
+  to   { opacity: 1;   transform: scale(1.1); }
+}
+
 /* Drag handle (decorative) */
 .step-drag-handle {
   color: var(--border);

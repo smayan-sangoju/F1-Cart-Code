@@ -6,6 +6,7 @@ export function useSerial() {
   const [logs, setLogs] = useState([])
   const [seqRunning, setSeqRunning] = useState(false)
   const [seqWaiting, setSeqWaiting] = useState(false)
+  const [seqStepIndex, setSeqStepIndex] = useState(-1)
   const [batteryPercent, setBatteryPercent] = useState(null)
   const [batteryVoltage, setBatteryVoltage] = useState(null)
 
@@ -65,11 +66,15 @@ export function useSerial() {
               },
             ])
 
-            if (trimmed === 'SEQ_DONE')    { setSeqRunning(false); setSeqWaiting(false) }
-            if (trimmed === 'SEQ_ARMED')   { setSeqRunning(false); setSeqWaiting(true)  }
-            if (trimmed === 'OK_STOP')     { setSeqRunning(false); setSeqWaiting(false) }
+            if (trimmed === 'SEQ_DONE')    { setSeqRunning(false); setSeqWaiting(false); setSeqStepIndex(-1) }
+            if (trimmed === 'SEQ_ARMED')   { setSeqRunning(false); setSeqWaiting(true);  setSeqStepIndex(-1) }
+            if (trimmed === 'OK_STOP')     { setSeqRunning(false); setSeqWaiting(false); setSeqStepIndex(-1) }
             if (trimmed === 'WAITING_BTN') { setSeqRunning(true);  setSeqWaiting(true)  }
-            if (trimmed === 'BTN_START')   { setSeqWaiting(false); setSeqRunning(true)  }
+            if (trimmed === 'BTN_START')   { setSeqWaiting(false); setSeqRunning(true);  setSeqStepIndex(0)  }
+            if (trimmed.startsWith('SEQ_STEP ')) {
+              const idx = parseInt(trimmed.split(' ')[1], 10)
+              if (!isNaN(idx)) setSeqStepIndex(idx)
+            }
           }
         }
       } catch (err) {
@@ -193,6 +198,7 @@ export function useSerial() {
     seqRunning,
     setSeqRunning,
     seqWaiting,
+    seqStepIndex,
     batteryPercent,
     batteryVoltage,
     connect,

@@ -53,7 +53,7 @@ function SequenceTimeline({ steps, totalTime }) {
 }
 
 export default function SequenceBuilder({ serial, speedProfiles }) {
-  const { connected, sendCommand, seqRunning, seqWaiting } = serial
+  const { connected, sendCommand, seqRunning, seqWaiting, seqStepIndex } = serial
   const { profiles } = speedProfiles
 
   const [steps,       setSteps]       = useState([])
@@ -231,6 +231,7 @@ export default function SequenceBuilder({ serial, speedProfiles }) {
           steps.map((step, i) => {
             const mod = dirMod(step.direction)
             const isEditing = editingId === step.id
+            const isActive = seqRunning && !seqWaiting && i === seqStepIndex
 
             if (isEditing) {
               return (
@@ -276,9 +277,11 @@ export default function SequenceBuilder({ serial, speedProfiles }) {
             }
 
             return (
-              <div key={step.id} className={`step-item step-${mod}`}>
+              <div key={step.id} className={`step-item step-${mod}${isActive ? ' step-active' : ''}`}>
                 <span className="step-drag-handle" aria-hidden="true">⋮⋮</span>
-                <span className={`step-badge badge-${mod}`}>{i + 1}</span>
+                <span className={`step-badge badge-${mod}${isActive ? ' badge-running' : ''}`}>
+                  {isActive ? '▶' : i + 1}
+                </span>
                 <span className="step-dir">{step.direction}</span>
                 {step.speed && (
                   <span className={`step-speed-tag tag-${mod}${step.speed.isCustom ? ' tag-custom' : ''}`}>
