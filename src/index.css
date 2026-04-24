@@ -814,6 +814,27 @@ input, select { font-family: 'DM Sans', system-ui, sans-serif; color: var(--text
   color: var(--text);
 }
 
+/* ── Test speed button ────────────────────────────────────── */
+.btn-test-speed {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.btn-test-fwd { color: var(--blue); }
+.btn-test-rev { color: var(--purple); }
+.btn-test-fwd:hover:not(:disabled) { border-color: var(--blue); background: rgba(0,170,255,0.12); }
+.btn-test-rev:hover:not(:disabled) { border-color: var(--purple); background: rgba(160,100,255,0.12); }
+.btn-test-speed:disabled { opacity: 0.35; cursor: not-allowed; }
+
 /* ── Save profile form ────────────────────────────────────── */
 .btn-save-profile {
   flex-shrink: 0;

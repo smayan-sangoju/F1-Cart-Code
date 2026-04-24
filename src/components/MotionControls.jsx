@@ -8,12 +8,12 @@ const SPEEDS = [
 
 // Forward: above neutral, higher = faster
 const FWD_MIN  = 93
-const FWD_MAX  = 130
+const FWD_MAX  = 113  // tighter max so presets spread across bar
 const FWD_STEP = 2
 const FWD_PRESETS = [98, 100, 103]   // Slow / Med / Fast
 
 // Reverse: below neutral, lower = faster
-const REV_MIN  = 50
+const REV_MIN  = 65   // tighter min so presets spread across bar
 const REV_MAX  = 88
 const REV_STEP = 2
 const REV_PRESETS = [84, 79, 74]     // Slow / Med / Fast
@@ -153,15 +153,11 @@ export default function MotionControls({ serial, speedProfiles }) {
   }
 
   const adjFwd = (delta) => {
-    const next = Math.max(FWD_MIN, Math.min(FWD_MAX, customFwd + delta))
-    setCustomFwd(next)
-    fireCustomFwd(next)
+    setCustomFwd(prev => Math.max(FWD_MIN, Math.min(FWD_MAX, prev + delta)))
   }
 
   const adjRev = (delta) => {
-    const next = Math.max(REV_MIN, Math.min(REV_MAX, customRev + delta))
-    setCustomRev(next)
-    fireCustomRev(next)
+    setCustomRev(prev => Math.max(REV_MIN, Math.min(REV_MAX, prev + delta)))
   }
 
   return (
@@ -206,6 +202,12 @@ export default function MotionControls({ serial, speedProfiles }) {
             variant="fwd"
             disabled={!connected}
           />
+          <button
+            className="btn-test-speed btn-test-fwd"
+            title="Test this speed"
+            onClick={() => fireCustomFwd(customFwd)}
+            disabled={!connected}
+          >▶</button>
           <button
             className="btn-save-profile"
             title="Save as speed profile"
@@ -254,6 +256,12 @@ export default function MotionControls({ serial, speedProfiles }) {
             variant="rev"
             disabled={!connected}
           />
+          <button
+            className="btn-test-speed btn-test-rev"
+            title="Test this speed"
+            onClick={() => fireCustomRev(customRev)}
+            disabled={!connected}
+          >▶</button>
           <button
             className="btn-save-profile"
             title="Save as speed profile"
