@@ -61,16 +61,50 @@ export default function SequenceBuilder({ serial, speedProfiles }) {
   const [newSpeed,    setNewSpeed]    = useState('Slow')
   const [newDuration, setNewDuration] = useState('2')
 
-  // Resolve the newSpeed select value into a speed value for the step
-  const resolveSpeed = () => {
-    if (newDir === 'Stop') return null
-    if (newSpeed.startsWith('custom:')) {
-      const id = Number(newSpeed.split(':')[1])
+  // ── Inline editing state ─────────────────────────────────────────────────
+  const [editingId,  setEditingId]  = useState(null)
+  const [editDir,    setEditDir]    = useState('Forward')
+  const [editSpeed,  setEditSpeed]  = useState('Slow')
+  const [editDur,    setEditDur]    = useState('2')
+
+  const speedToSelectVal = (speed) => {
+    if (!speed) return 'Slow'
+    if (speed.isCustom) return `custom:${profiles.find(p => p.servoVal === speed.servoVal && p.name === speed.name)?.id ?? ''}`
+    return speed
+  }
+
+  const startEdit = (step) => {
+    setEditingId(step.id)
+    setEditDir(step.direction)
+    setEditSpeed(speedToSelectVal(step.speed))
+    setEditDur(String(step.duration))
+  }
+
+  const cancelEdit = () => setEditingId(null)
+
+  const resolveSpeedFor = (dir, speedVal) => {
+    if (dir === 'Stop') return null
+    if (speedVal.startsWith('custom:')) {
+      const id = Number(speedVal.split(':')[1])
       const p  = profiles.find(p => p.id === id)
       return p ? { name: p.name, servoVal: p.servoVal, isCustom: true } : 'Slow'
     }
-    return newSpeed
+    return speedVal
   }
+
+  const saveEdit = () => {
+    const dur = parseFloat(editDur)
+    if (isNaN(dur) || dur <= 0) return
+    setSteps(prev => prev.map(s =>
+      s.id === editingId
+        ? { ...s, direction: editDir, speed: resolveSpeedFor(editDir, editSpeed), duration: dur }
+        : s
+    ))
+    setEditingId(null)
+  }
+
+  // Resolve the newSpeed select value into a speed value for the step
+  const resolveSpeed = () => resolveSpeedFor(newDir, newSpeed)
 
   // ── Add step ─────────────────────────────────────────────────────────────
   const addStep = () => {
@@ -87,9 +121,15 @@ export default function SequenceBuilder({ serial, speedProfiles }) {
     ])
   }
 
-  const removeStep = (id) => setSteps(prev => prev.filter(s => s.id !== id))
+  const removeStep = (id) => {
+    if (editingId === id) setEditingId(null)
+    setSteps(prev => prev.filter(s => s.id !== id))
+  }
 
-  const clearAll = () => setSteps([])
+  const clearAll = () => {
+    setEditingId(null)
+    setSteps([])
+  }
 
   // ── Sequence execution ───────────────────────────────────────────────────
   const runSequence = async () => {
@@ -190,6 +230,51 @@ export default function SequenceBuilder({ serial, speedProfiles }) {
         ) : (
           steps.map((step, i) => {
             const mod = dirMod(step.direction)
+            const isEditing = editingId === step.id
+
+            if (isEditing) {
+              return (
+                <div key={step.id} className="step-item step-edit-row">
+                  <span className={`step-badge badge-${mod}`}>{i + 1}</span>
+                  <select
+                    value={editDir}
+                    onChange={e => setEditDir(e.target.value)}
+                    className="select step-edit-select"
+                  >
+                    {DIRECTIONS.map(d => <option key={d}>{d}</option>)}
+                  </select>
+                  <select
+                    value={editSpeed}
+                    onChange={e => setEditSpeed(e.target.value)}
+                    disabled={editDir === 'Stop'}
+                    className="select step-edit-select"
+                  >
+                    <optgroup label="Presets">
+                      {PRESET_SPEEDS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </optgroup>
+                    {profiles.length > 0 && (
+                      <optgroup label="Custom Profiles">
+                        {profiles.map(p => (
+                          <option key={p.id} value={`custom:${p.id}`}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={editDur}
+                    onChange={e => setEditDur(e.target.value)}
+                    className="input-duration"
+                  />
+                  <span className="input-unit">s</span>
+                  <button className="btn-edit-save" onClick={saveEdit}>Save</button>
+                  <button className="btn-remove" onClick={cancelEdit}>✕</button>
+                </div>
+              )
+            }
+
             return (
               <div key={step.id} className={`step-item step-${mod}`}>
                 <span className="step-drag-handle" aria-hidden="true">⋮⋮</span>
@@ -201,6 +286,14 @@ export default function SequenceBuilder({ serial, speedProfiles }) {
                   </span>
                 )}
                 <span className="step-duration">{step.duration}s</span>
+                <button
+                  className="btn-edit"
+                  onClick={() => startEdit(step)}
+                  aria-label={`Edit step ${i + 1}`}
+                  disabled={seqRunning}
+                >
+                  ✎
+                </button>
                 <button
                   className="btn-remove"
                   onClick={() => removeStep(step.id)}

@@ -1181,6 +1181,55 @@ input, select { font-family: 'DM Sans', system-ui, sans-serif; color: var(--text
   background: var(--red-tint);
 }
 
+.btn-edit {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+
+.btn-edit:hover:not(:disabled) {
+  color: var(--blue);
+  background: var(--blue-tint);
+}
+
+.btn-edit:disabled { opacity: 0.25; cursor: not-allowed; }
+
+.step-edit-row {
+  border-left-color: var(--amber);
+  background: rgba(245, 158, 11, 0.04);
+  border-color: rgba(245, 158, 11, 0.30);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.step-edit-select {
+  flex: 1;
+  min-width: 80px;
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+.btn-edit-save {
+  background: var(--amber);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.btn-edit-save:hover { background: #fbbf24; }
+
 /* ── Timeline visualization ── */
 .seq-timeline {
   margin-top: 6px;
