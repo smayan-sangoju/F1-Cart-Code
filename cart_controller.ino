@@ -30,12 +30,12 @@ const int REV_MED   = 77;    // ~40 cm/s
 const int REV_FAST  = 71;    // ~60 cm/s
 
 // Forward kicks above neutral; reverse kicks further below
-const int KICK_F1_VAL = 107; const int KICK_F1_MS = 280;  // Slow fwd
-const int KICK_F2_VAL = 110; const int KICK_F2_MS = 200;  // Med fwd
-const int KICK_F3_VAL = 114; const int KICK_F3_MS = 150;  // Fast fwd
-const int KICK_R1_VAL = 73;  const int KICK_R1_MS = 280;  // Slow rev
-const int KICK_R2_VAL = 70;  const int KICK_R2_MS = 200;  // Med rev
-const int KICK_R3_VAL = 65;  const int KICK_R3_MS = 150;  // Fast rev
+const int KICK_F1_VAL = 103; const int KICK_F1_MS = 130;  // Slow fwd  (+5, 130ms)
+const int KICK_F2_VAL = 106; const int KICK_F2_MS = 100;  // Med fwd   (+4, 100ms)
+const int KICK_F3_VAL = 110; const int KICK_F3_MS = 80;   // Fast fwd  (+4,  80ms)
+const int KICK_R1_VAL = 80;  const int KICK_R1_MS = 130;  // Slow rev  (−4, 130ms)
+const int KICK_R2_VAL = 73;  const int KICK_R2_MS = 100;  // Med rev   (−4, 100ms)
+const int KICK_R3_VAL = 67;  const int KICK_R3_MS = 80;   // Fast rev  (−4,  80ms)
 
 // ── Sequence storage ─────────────────────────────────────────
 struct Step {
